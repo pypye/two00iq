@@ -5,6 +5,7 @@ import json
 import requests
 from discord.utils import get
 from youtube_dl import YoutubeDL
+import bot
 
 from utils import embed
 
@@ -49,10 +50,10 @@ class Music(object):
             )
             return
 
-        if ctx.voice_client and ctx.author.voice.channel != ctx.voice_client.channel:
+        if bot.client.voice_clients and ctx.author.voice.channel != bot.client.voice_clients.channel:
             await ctx.send(
                 embed=embed(
-                    f"Bot is playing in **{ctx.voice_client.channel}**. Please join that channel in order to use the /play command.",
+                    f"Bot is playing in **{bot.client.voice_clients.channel}**. Please join that channel in order to use the /play command.",
                     0x9C5FFF,
                 )
             )
