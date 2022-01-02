@@ -3,11 +3,8 @@ import json
 import bot
 from discord.ext import tasks
 import requests
-from discord_slash.context import SlashContext
 from quiz import Quiz
-
 from utils import embed, sep
-
 
 class GeneralCommands(object):
     def init():

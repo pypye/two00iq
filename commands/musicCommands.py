@@ -1,5 +1,4 @@
 from discord.ext import tasks
-from discord_slash.context import SlashContext
 import bot
 
 from music import Music
@@ -21,7 +20,7 @@ class MusicCommands(object):
         name="stop", description="Stop music, clear the queue and leave the bot"
     )
     async def stop(ctx):
-        await Music.stopMusic(bot.client, ctx)
+        await Music.stopMusic(ctx)
 
     @bot.slash.slash(name="queue", description="Shows the music queue")
     async def queue(ctx):
@@ -33,11 +32,11 @@ class MusicCommands(object):
 
     @bot.slash.slash(name="skip", description="Skip the current song")
     async def skip(ctx):
-        await Music.skip(bot.client, ctx)
+        await Music.skip(ctx)
 
     @bot.slash.slash(name="remove", description="Remove song [index] from the queue")
     async def remove(ctx, index):
-        await Music.remove(bot.client, ctx, int(index))
+        await Music.remove(ctx, int(index))
 
     @bot.slash.slash(name="lyrics", description="Find lyrics of the current track")
     async def lyrics(ctx):
@@ -45,8 +44,8 @@ class MusicCommands(object):
 
     @tasks.loop(seconds=1)
     async def music_playing():
-        await Music.playNext(bot.client)
+        await Music.playNext()
 
     @tasks.loop(seconds=1)
     async def music_check_stop():
-        await Music.checkDisconnect(bot.client)
+        await Music.checkDisconnect()

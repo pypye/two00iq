@@ -17,5 +17,4 @@ async def on_ready():
     print("--------------")
 
 
-bot.client.run('NzQwMTgwNzQxMzgzNjUxMzk4.XylRCA.exZ-rrW84xfGGpjQ0jLd8ujplVI')
-
+bot.client.run("NzQwMTgwNzQxMzgzNjUxMzk4.XylRCA.exZ-rrW84xfGGpjQ0jLd8ujplVI")

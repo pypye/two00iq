@@ -1,11 +1,11 @@
-import time
-from warnings import catch_warnings
+import bot
 import discord
 import json
 import requests
+import time
 from discord.utils import get
 from youtube_dl import YoutubeDL
-import bot
+
 
 from utils import embed
 
@@ -49,11 +49,11 @@ class Music(object):
                 )
             )
             return
-
-        if bot.client.voice_clients and ctx.author.voice.channel != bot.client.voice_clients.channel:
+        voice = get(bot.client.voice_clients, guild=ctx.guild)
+        if voice and ctx.author.voice.channel != voice.channel:
             await ctx.send(
                 embed=embed(
-                    f"Bot is playing in **{bot.client.voice_clients.channel}**. Please join that channel in order to use the /play command.",
+                    f"Bot is playing in **#{voice.channel}**. Please join that channel in order to use the /play command.",
                     0x9C5FFF,
                 )
             )
@@ -101,16 +101,22 @@ class Music(object):
                 )
             )
 
-    async def playNext(client):
+    async def playNext():
         for serverId, value in list(Music.musicQueue.items()):
             if Music.countQueue[serverId] < len(Music.musicQueue[serverId]):
                 URL, title, wp_url, ctx = Music.musicQueue[serverId][
                     Music.countQueue[serverId]
                 ]
             else:
-                URL, title, wp_url, ctx = Music.musicQueue[serverId][-1]
+                if len(Music.musicQueue[serverId]):
+                    URL, title, wp_url, ctx = Music.musicQueue[serverId][-1]
+                else:
+                    del Music.countQueue[serverId]
+                    del Music.musicQueue[serverId]
+                    Music.inactiveTime[serverId] = time.perf_counter()
+                    return
 
-            voice = get(client.voice_clients, guild=ctx.guild)
+            voice = get(bot.client.voice_clients, guild=ctx.guild)
             if not voice or not voice.is_connected():
                 channel = ctx.author.voice.channel
                 voice = await channel.connect()
@@ -126,7 +132,6 @@ class Music(object):
                         del Music.countQueue[serverId]
                         del Music.musicQueue[serverId]
                         Music.inactiveTime[serverId] = time.perf_counter()
-
                 else:
                     Music.countQueue[serverId] += 1
                     await ctx.send(
@@ -214,31 +219,38 @@ class Music(object):
         else:
             await ctx.send(embed=embed(f"Cant find any lyrics match.", 0x9C5FFF))
 
-    async def remove(client, ctx, arg):
+    async def remove(ctx, arg):
         if ctx.guild.id in Music.musicQueue:
-            if arg <= 0:
+            if arg <= 0 or arg > len(Music.musicQueue[ctx.guild.id]):
                 return
             if arg == Music.countQueue[ctx.guild.id]:
-                voice = get(client.voice_clients, guild=ctx.guild)
-                voice.stop()
-            if arg <= Music.countQueue[ctx.guild.id]:
-                Music.countQueue[ctx.guild.id] -= 1
-            await ctx.send(
-                embed=discord.Embed(
-                    title=f"{Music.musicQueue[ctx.guild.id][arg - 1][1]}",
-                    url=f"{Music.musicQueue[ctx.guild.id][arg - 1][2]}",
-                    description=":notes: Removed",
-                    color=0x07ABA5,
+                voice = get(bot.client.voice_clients, guild=ctx.guild)
+                await ctx.send(
+                    embed=discord.Embed(
+                        title=f"{Music.musicQueue[ctx.guild.id][arg - 1][1]}",
+                        url=f"{Music.musicQueue[ctx.guild.id][arg - 1][2]}",
+                        description=":notes: Removed",
+                        color=0x07ABA5,
+                    )
                 )
-            )
-            Music.musicQueue[ctx.guild.id].pop(arg - 1)
-            if len(Music.musicQueue[ctx.guild.id]) == 0:
-                del Music.countQueue[ctx.guild.id]
-                del Music.musicQueue[ctx.guild.id]
+                Music.musicQueue[ctx.guild.id].pop(arg - 1)
+                Music.countQueue[ctx.guild.id] -= 1
+                voice.stop()
+            if arg < Music.countQueue[ctx.guild.id]:
+                await ctx.send(
+                    embed=discord.Embed(
+                        title=f"{Music.musicQueue[ctx.guild.id][arg - 1][1]}",
+                        url=f"{Music.musicQueue[ctx.guild.id][arg - 1][2]}",
+                        description=":notes: Removed",
+                        color=0x07ABA5,
+                    )
+                )
+                Music.musicQueue[ctx.guild.id].pop(arg - 1)
+                Music.countQueue[ctx.guild.id] -= 1
 
-    async def skip(client, ctx):
+    async def skip(ctx):
         if ctx.guild.id in Music.musicQueue:
-            voice = get(client.voice_clients, guild=ctx.guild)
+            voice = get(bot.client.voice_clients, guild=ctx.guild)
             if voice:
                 voice.stop()
                 if ctx.guild.id not in Music.loopEnable and Music.countQueue[
@@ -248,34 +260,33 @@ class Music(object):
                     del Music.musicQueue[ctx.guild.id]
         await ctx.send(embed=embed(f"Music skipped", 0x9C5FFF))
 
-    async def stopMusic(client, ctx):
-        voice = get(client.voice_clients, guild=ctx.guild)
-        if ctx.guild.id in Music.musicQueue:
-            del Music.countQueue[ctx.guild.id]
-            del Music.musicQueue[ctx.guild.id]
-        if ctx.guild.id in Music.loopEnable:
-            del Music.loopEnable[ctx.guild.id]
+    async def stopMusic(ctx):
+        voice = get(bot.client.voice_clients, guild=ctx.guild)
         if voice and voice.is_playing():
             voice.stop()
             Music.inactiveTime[ctx.guild.id] = time.perf_counter()
             await ctx.send(embed=embed(f"Music stopped", 0x9C5FFF))
 
-    async def checkDisconnect(client):
+    async def checkDisconnect():
         for serverId, value in list(Music.ctxSave.items()):
-            voice = get(client.voice_clients, guild=Music.ctxSave[serverId].guild)
+            voice = get(bot.client.voice_clients, guild=Music.ctxSave[serverId].guild)
             if voice:
                 if (
                     serverId in Music.inactiveTime
-                    and time.perf_counter() - Music.inactiveTime[serverId] >= 120
+                    and time.perf_counter() - Music.inactiveTime[serverId] >= 90
                 ) or len(voice.channel.members) == 1:
-                    await Music.stopMusic(client, Music.ctxSave[serverId])
                     await Music.ctxSave[serverId].send(
                         embed=embed(
                             f":white_check_mark: Goodbye!!!",
                             0x9C5FFF,
                         )
                     )
-                    await Music.ctxSave[serverId].voice_client.disconnect()
+                    await voice.disconnect()
                     del Music.ctxSave[serverId]
                     if serverId in Music.inactiveTime:
                         del Music.inactiveTime[serverId]
+                    if serverId in Music.musicQueue:
+                        del Music.countQueue[serverId]
+                        del Music.musicQueue[serverId]
+                    if serverId in Music.loopEnable:
+                        del Music.loopEnable[serverId]
