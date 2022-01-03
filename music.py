@@ -235,7 +235,8 @@ class Music(object):
                 )
                 Music.musicQueue[ctx.guild.id].pop(arg - 1)
                 Music.countQueue[ctx.guild.id] -= 1
-                voice.stop()
+                if voice: 
+                    voice.stop()
             if arg < Music.countQueue[ctx.guild.id]:
                 await ctx.send(
                     embed=discord.Embed(
@@ -253,11 +254,6 @@ class Music(object):
             voice = get(bot.client.voice_clients, guild=ctx.guild)
             if voice:
                 voice.stop()
-                if ctx.guild.id not in Music.loopEnable and Music.countQueue[
-                    ctx.guild.id
-                ] >= len(Music.musicQueue[ctx.guild.id]):
-                    del Music.countQueue[ctx.guild.id]
-                    del Music.musicQueue[ctx.guild.id]
         await ctx.send(embed=embed(f"Music skipped", 0x9C5FFF))
 
     async def stopMusic(ctx):
