@@ -82,36 +82,44 @@ class Music(object):
             ))
 
     async def playNext():
+
         for serverId, value in list(Music.musicQueue.items()):
-            if Music.countQueue[serverId] < len(Music.musicQueue[serverId]):
-                URL, title, wp_url, ctx = Music.musicQueue[serverId][Music.countQueue[serverId]]
-            else:
-                URL, title, wp_url, ctx = Music.musicQueue[serverId][-1]
-
-            voice = get(client.voice_clients, guild=ctx.guild)
-            if not voice or not voice.is_connected():
-                channel = ctx.author.voice.channel
-                voice = await channel.connect()
-
-            Music.ctxSave[serverId] = ctx
-
-            if voice and not voice.is_playing():
-                if Music.countQueue[serverId] >= len(Music.musicQueue[serverId]):
-                    if serverId in Music.loopEnable:
-                        Music.countQueue[serverId] = 0
-                        URL, title, wp_url, ctx = Music.musicQueue[serverId][0]
-                    else:
-                        del Music.countQueue[serverId]
-                        del Music.musicQueue[serverId]
-                        Music.inactiveTime[serverId] = time.perf_counter()
-                        return
+            try: 
+                if Music.countQueue[serverId] < len(Music.musicQueue[serverId]):
+                    URL, title, wp_url, ctx = Music.musicQueue[serverId][Music.countQueue[serverId]]
                 else:
-                    Music.countQueue[serverId] += 1
-                    await ctx.send(embed=discord.Embed(title=f"{title}", url=f"{wp_url}", description=":notes: Now playing", color=0x07ABA5))
-                    if ctx.guild.id in Music.inactiveTime:
-                        del Music.inactiveTime[ctx.guild.id]
+                    URL, title, wp_url, ctx = Music.musicQueue[serverId][-1]
 
-                    voice.play(discord.FFmpegPCMAudio(URL, **FFMPEG_OPTIONS))
+                voice = get(client.voice_clients, guild=ctx.guild)
+                if not (voice and voice.is_connected()):
+                    channel = ctx.author.voice.channel
+                    voice = await channel.connect()
+
+                Music.ctxSave[serverId] = ctx
+
+                if voice and not voice.is_playing():
+                    if Music.countQueue[serverId] >= len(Music.musicQueue[serverId]):
+                        if serverId in Music.loopEnable:
+                            Music.countQueue[serverId] = 0
+                            URL, title, wp_url, ctx = Music.musicQueue[serverId][0]
+                        else:
+                            del Music.countQueue[serverId]
+                            del Music.musicQueue[serverId]
+                            Music.inactiveTime[serverId] = time.perf_counter()
+                            return
+                    else:
+                        Music.countQueue[serverId] += 1
+                        await ctx.send(embed=discord.Embed(title=f"{title}", url=f"{wp_url}", description=":notes: Now playing", color=0x07ABA5))
+                        if ctx.guild.id in Music.inactiveTime:
+                            del Music.inactiveTime[ctx.guild.id]
+
+                        voice.play(discord.FFmpegPCMAudio(URL, **FFMPEG_OPTIONS))
+            except Exception as e:
+                print(e)
+                del Music.countQueue[serverId]
+                del Music.musicQueue[serverId]
+                Music.inactiveTime[serverId] = time.perf_counter()
+
 
     async def getQueue(ctx):
         ans = ""
