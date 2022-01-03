@@ -1,46 +1,37 @@
-from discord.ext import tasks
-import bot
-
+from bot import client
 from music import Music
+from discord.ext import tasks
 
 
 class MusicCommands(object):
+
     def init():
         MusicCommands.music_playing.start()
         MusicCommands.music_check_stop.start()
 
-    @bot.slash.slash(
-        name="play",
-        description="Plays your radio/stream of choice or youtube links and searches",
-    )
-    async def play(ctx, *, song):
+    @client.slash_command(name="play", description="Plays your radio/stream of choice or youtube links and searches")
+    async def play(ctx, song: str):
         await Music.playMusic(ctx, song)
 
-    @bot.slash.slash(
-        name="stop", description="Stop music, clear the queue and leave the bot"
-    )
+    @client.slash_command(name="stop", description="Stop music, clear the queue and leave the bot")
     async def stop(ctx):
         await Music.stopMusic(ctx)
 
-    @bot.slash.slash(name="queue", description="Shows the music queue")
+    @client.slash_command(name="queue", description="Shows the music queue")
     async def queue(ctx):
         await Music.getQueue(ctx)
 
-    @bot.slash.slash(name="loop", description="Loop the current queue")
+    @client.slash_command(name="loop", description="Loop the current queue")
     async def loop(ctx):
         await Music.loopQueue(ctx)
 
-    @bot.slash.slash(name="skip", description="Skip the current song")
+    @client.slash_command(name="skip", description="Skip the current song")
     async def skip(ctx):
         await Music.skip(ctx)
 
-    @bot.slash.slash(name="remove", description="Remove song [index] from the queue")
-    async def remove(ctx, index):
-        await Music.remove(ctx, int(index))
-
-    @bot.slash.slash(name="lyrics", description="Find lyrics of the current track")
-    async def lyrics(ctx):
-        await Music.getLyrics(ctx)
+    @client.slash_command(name="remove", description="Remove song [index] from the queue")
+    async def remove(ctx, index: int):
+        await Music.remove(ctx, index)
 
     @tasks.loop(seconds=1)
     async def music_playing():
