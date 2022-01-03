@@ -206,7 +206,7 @@ class Music(object):
             voice = get(client.voice_clients, guild=Music.ctxSave[serverId].guild)
             if voice:
                 if (serverId in Music.inactiveTime and time.perf_counter() - Music.inactiveTime[serverId] >= 90) or len(voice.channel.members) == 1:
-                    await Music.ctxSave[serverId].respond(embed=discord.Embed(description=f":white_check_mark: Goodbye!!!", color=0x9C5FFF))
+                    await Music.ctxSave[serverId].send(embed=discord.Embed(description=f":white_check_mark: Goodbye!!!", color=0x9C5FFF))
                     await voice.disconnect()
                     del Music.ctxSave[serverId]
                     if serverId in Music.inactiveTime:
