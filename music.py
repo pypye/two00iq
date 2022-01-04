@@ -84,17 +84,21 @@ class Music(object):
     async def playNext():
 
         for serverId, value in list(Music.musicQueue.items()):
-            try: 
+            
                 if Music.countQueue[serverId] < len(Music.musicQueue[serverId]):
                     URL, title, wp_url, ctx = Music.musicQueue[serverId][Music.countQueue[serverId]]
                 else:
                     URL, title, wp_url, ctx = Music.musicQueue[serverId][-1]
 
                 voice = get(client.voice_clients, guild=ctx.guild)
+                
                 if not (voice and voice.is_connected()):
                     channel = ctx.author.voice.channel
-                    voice = await channel.connect()
-
+                    try:
+                        voice = await channel.connect()
+                    except Exception as e:
+                        print(e)
+                
                 Music.ctxSave[serverId] = ctx
 
                 if voice and not voice.is_playing():
@@ -114,11 +118,7 @@ class Music(object):
                             del Music.inactiveTime[ctx.guild.id]
 
                         voice.play(discord.FFmpegPCMAudio(URL, **FFMPEG_OPTIONS))
-            except Exception as e:
-                print(e)
-                del Music.countQueue[serverId]
-                del Music.musicQueue[serverId]
-                Music.inactiveTime[serverId] = time.perf_counter()
+            
 
 
     async def getQueue(ctx):
