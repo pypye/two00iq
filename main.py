@@ -14,4 +14,4 @@ async def on_ready():
     print("--------------")
 
 
-client.run("NzQwMTgwNzQxMzgzNjUxMzk4.XylRCA.exZ-rrW84xfGGpjQ0jLd8ujplVI")
+client.run("[Put token here]")
